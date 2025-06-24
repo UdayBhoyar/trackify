@@ -8,13 +8,41 @@ export default function TabsLayout() {
       <Stack.Screen 
         name="SplashScreen" 
         options={{ headerShown: false }} 
-      />
-      {/* Home page, after splash */}
+      />  
+
+      {/* Home page */}
       <Stack.Screen 
         name="index" 
-        options={{  headerShown: false }} 
+        options={{ headerShown: false }} 
       />
-      {/* Add other screens here */}
+
+      {/* Add Expense page */}
+      <Stack.Screen 
+        name="addexpense"
+        options={{ 
+          title: "Add Expense",
+          presentation: "modal",
+          headerShown: false,
+        }} 
+      />
+
+      {/* Expense History page */}
+      <Stack.Screen 
+        name="ExpenseHistory"
+        options={{ 
+          title: "Expense History",
+          headerShown: false,
+        }}
+      />
+
+      {/* Profile Screen */}
+      <Stack.Screen
+        name="ProfileScreen"
+        options={{
+          title: "Profile",
+          headerShown: false, // you can change to false if you want no header
+        }}
+      />
     </Stack>
   );
 }

@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "expo-router";
+import BottomNavBar from "./BottomNavBar";
+
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Alert,
 } from "react-native";
 import {
   Plus,
@@ -24,7 +26,7 @@ import {
 } from "lucide-react-native";
 import Svg, { Circle, G, Path } from "react-native-svg";
 
-// Define the type for the data items
+// Type for category data
 type DataItem = {
   name: string;
   amount: number;
@@ -32,7 +34,7 @@ type DataItem = {
   icon: React.ComponentType<{ color: string; size: number }>;
 };
 
-// Define the props for the CustomPieChart component
+// Pie chart component
 type CustomPieChartProps = {
   data: DataItem[];
   radius: number;
@@ -54,16 +56,13 @@ const CustomPieChart: React.FC<CustomPieChartProps> = ({
       <Svg height={center * 2} width={center * 2}>
         {data.map((item, index) => {
           const totalAmount = data.reduce(
-            (sum: number, item: DataItem) => sum + item.amount,
+            (sum, item) => sum + item.amount,
             0
           );
           const slicePercentage = (item.amount / totalAmount) * 100;
           const startAngle = cumulativePercentage * 3.6;
           let endAngle = (cumulativePercentage + slicePercentage) * 3.6;
-
-          // Subtract the gap from the end angle
           endAngle -= gap;
-
           cumulativePercentage += slicePercentage;
 
           const startRadians = (startAngle - 90) * (Math.PI / 180);
@@ -75,7 +74,6 @@ const CustomPieChart: React.FC<CustomPieChartProps> = ({
           const y2 = center + radius * Math.sin(endRadians);
 
           const largeArcFlag = slicePercentage > 50 ? 1 : 0;
-
           const pathData = [
             `M ${center},${center}`,
             `L ${x1},${y1}`,
@@ -162,7 +160,6 @@ const weeklyData = [
   { day: "Sun", amount: 1400 },
 ];
 
-// Circular progress component for top-right percentage circle
 const CircularProgress = ({ percentage }: { percentage: number }) => {
   const size = 48;
   const strokeWidth = 6;
@@ -173,7 +170,6 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
   return (
     <View style={{ position: "absolute", top: 16, right: 16 }}>
       <Svg width={size} height={size}>
-        {/* Background circle */}
         <Circle
           stroke="#d1fae5"
           fill="none"
@@ -182,7 +178,6 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
           r={radius}
           strokeWidth={strokeWidth}
         />
-        {/* Progress circle */}
         <Circle
           stroke="#16a34a"
           fill="none"
@@ -217,39 +212,42 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
   );
 };
 
-export default function TrackifyHome() {
+export default function Index() {
+  const router = useRouter();
+
   const totalSpent = 12350;
   const budget = 19000;
   const budgetUsed = (totalSpent / budget) * 100;
-  const remaining = budget - totalSpent;
+
   const maxWeeklyAmount = Math.max(...weeklyData.map((d) => d.amount));
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [barHeights, setBarHeights] = useState<number[]>([]);
 
-  const handleDayPress = (day: string, amount: number) => {
+  useEffect(() => {
+    const heights = weeklyData.map(
+      (day) => (day.amount / maxWeeklyAmount) * 100 + Math.random() * 5
+    );
+    setBarHeights(heights);
+  }, []);
+
+  const handleDayPress = (day: string) => {
     setSelectedDay(day);
-    Alert.alert(day, `Amount spent: ₹${amount.toLocaleString()}`);
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={{ paddingBottom: 80 }}
-      >
-        {/* Header Box styled like card */}
+      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 80 }}>
+        <Text style={styles.headerGreetingText}>Hello User!</Text>
+        <Text style={styles.headerSummaryText}>Here's your spending summary</Text>
+
         <View style={styles.card}>
           <CircularProgress percentage={budgetUsed} />
+
           <Text style={styles.headerSubText}>Total Spent This Month</Text>
           <Text style={styles.headerAmount}>₹{totalSpent.toLocaleString()}</Text>
 
-          {/* Progress Bar */}
           <View style={styles.progressBarBackground}>
-            <View
-              style={[
-                styles.progressBarFill,
-                { width: `${Math.min(budgetUsed, 100)}%` },
-              ]}
-            />
+            <View style={[styles.progressBarFill, { width: `${Math.min(budgetUsed, 100)}%` }]} />
           </View>
 
           <Text style={styles.progressText}>
@@ -257,61 +255,41 @@ export default function TrackifyHome() {
           </Text>
         </View>
 
-        {/* Action Buttons */}
         <View style={styles.actionButtonsRow}>
-          <TouchableOpacity style={[styles.button, styles.buttonPrimary]}>
+          <TouchableOpacity
+            style={[styles.button, styles.buttonPrimary]}
+            onPress={() => router.push("./addexpense")}
+          >
             <Plus color="white" size={16} />
             <Text style={styles.buttonText}>Add Expense</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.button, styles.buttonOutline]}>
             <Target color="#4b5563" size={16} />
-            <Text style={[styles.buttonText, { color: "#4b5563" }]}>
-              View Goals
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.actionButtonsRow}>
-          <TouchableOpacity style={[styles.button, styles.buttonOutline]}>
-            <Download color="#4b5563" size={16} />
-            <Text style={[styles.buttonText, { color: "#4b5563" }]}>
-              Export Data
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.buttonOutline]}>
-            <FileText color="#4b5563" size={16} />
-            <Text style={[styles.buttonText, { color: "#4b5563" }]}>
-              Invoices
-            </Text>
+            <Text style={[styles.buttonText, { color: "#4b5563" }]}>View Goals</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Category Breakdown */}
+        <View style={styles.actionButtonsRow}>
+          <TouchableOpacity style={[styles.button, styles.buttonOutline]}>
+            <Download color="#4b5563" size={16} />
+            <Text style={[styles.buttonText, { color: "#4b5563" }]}>Export Data</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, styles.buttonOutline]}>
+            <FileText color="#4b5563" size={16} />
+            <Text style={[styles.buttonText, { color: "#4b5563" }]}>Invoices</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Category Breakdown</Text>
           <View style={{ alignItems: "center", marginBottom: 16 }}>
-            <CustomPieChart
-              data={categoryData}
-              radius={80}
-              strokeWidth={10}
-              gap={12}
-            />
+            <CustomPieChart data={categoryData} radius={80} strokeWidth={10} gap={12} />
           </View>
-          {/* Legend */}
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              justifyContent: "center",
-            }}
-          >
+          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center" }}>
             {categoryData.map((cat) => (
               <View
                 key={cat.name}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  margin: 6,
-                }}
+                style={{ flexDirection: "row", alignItems: "center", margin: 6 }}
               >
                 <View
                   style={{
@@ -330,40 +308,41 @@ export default function TrackifyHome() {
           </View>
         </View>
 
-        {/* Weekly Overview */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Weekly Overview</Text>
           <View style={styles.weeklyChart}>
-            {weeklyData.map((day) => (
+            {weeklyData.map((day, index) => (
               <TouchableOpacity
                 key={day.day}
                 style={styles.weeklyBarContainer}
-                onPress={() => handleDayPress(day.day, day.amount)}
+                onPress={() => handleDayPress(day.day)}
               >
-                <View
-                  style={[
-                    styles.weeklyBar,
-                    {
-                      height: (day.amount / maxWeeklyAmount) * 100,
-                      backgroundColor: "#16a34a",
-                    },
-                  ]}
-                />
+                <View style={styles.weeklyBarWrapper}>
+                  <View
+                    style={[
+                      styles.weeklyBar,
+                      {
+                        height: Math.min(barHeights[index], 80),
+                        backgroundColor: "#16a34a",
+                      },
+                    ]}
+                  />
+                  <Text style={styles.weeklyAmount}>₹{day.amount}</Text>
+                </View>
                 <Text style={styles.weeklyDay}>{day.day}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Recent Transactions */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Recent Transactions</Text>
           {recentTransactions.map((t) => {
-            const Icon = t.icon;
+            const IconComponent = t.icon;
             return (
               <View key={t.id} style={styles.transactionRow}>
                 <View style={[styles.iconCircle, { backgroundColor: `${t.color}33` }]}>
-                  <Icon color={t.color} size={20} />
+                  <IconComponent color={t.color} size={20} />
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.transactionCategory}>{t.category}</Text>
@@ -379,20 +358,23 @@ export default function TrackifyHome() {
         </View>
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
+      {/* <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navButton}>
           <Home color="#16a34a" size={24} />
           <Text style={[styles.navText, { color: "#16a34a" }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navButton}>
-          <BarChart3 color="#6b7280" size={24} />
-          <Text style={[styles.navText, { color: "#6b7280" }]}>Analytics</Text>
+          <Target color="#6b7280" size={24} />
+          <Text style={[styles.navText, { color: "#6b7280" }]}>Goals</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.navButton, styles.navButtonCenter]}>
+        <TouchableOpacity
+          style={[styles.navButton, styles.navButtonCenter]}
+          onPress={() => router.push("./addexpense")}
+        >
           <Plus color="white" size={28} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton}>
+        <TouchableOpacity style={styles.navButton}
+        onPress={() => router.push("./ExpenseHistory")}>
           <History color="#6b7280" size={24} />
           <Text style={[styles.navText, { color: "#6b7280" }]}>History</Text>
         </TouchableOpacity>
@@ -400,13 +382,14 @@ export default function TrackifyHome() {
           <User color="#6b7280" size={24} />
           <Text style={[styles.navText, { color: "#6b7280" }]}>Profile</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
+       <BottomNavBar />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+  container: { flex: 1, backgroundColor: "#f9fafb", paddingTop: 40 },
   headerSubText: {
     fontSize: 14,
     color: "#000000",
@@ -459,6 +442,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 8,
     padding: 16,
+
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 10,
@@ -492,21 +476,31 @@ const styles = StyleSheet.create({
   weeklyChart: {
     flexDirection: "row",
     justifyContent: "space-between",
-    height: 100,
+    height: 150,
     alignItems: "flex-end",
+    paddingTop: 20,
   },
   weeklyBarContainer: {
     alignItems: "center",
     flex: 1,
     marginHorizontal: 4,
   },
+  weeklyBarWrapper: {
+    alignItems: "center",
+    marginBottom: 4,
+  },
   weeklyBar: {
-    width: "100%",
+    width: 20,
     borderRadius: 4,
     minHeight: 8,
+    marginBottom: 4,
+  },
+  weeklyAmount: {
+    fontSize: 12,
+    color: "#16a34a",
+    marginBottom: 4,
   },
   weeklyDay: {
-    marginTop: 6,
     fontSize: 12,
     color: "#6b7280",
   },
@@ -569,5 +563,19 @@ const styles = StyleSheet.create({
   navText: {
     fontSize: 10,
     marginTop: 2,
+  },
+  headerGreetingText: {
+    fontSize: 30,
+    marginLeft: 20,
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: 4,
+  },
+  headerSummaryText: {
+    fontSize: 16,
+    marginLeft: 20,
+    fontWeight: "500",
+    color: "#6b7280",
+    marginBottom: 8,
   },
 });
